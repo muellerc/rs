@@ -1,0 +1,106 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  Example...
+
+##########################################################################
+#  Parameters                                                            #
+##########################################################################
+#Parameters:
+
+Resources:
+  GlobalAPIGatewayAccountConfig:
+    Type: AWS::ApiGateway::Account
+    Properties:
+      CloudWatchRoleArn: !GetAtt GlobalAPIGatewayCloudWatchRole.Arn
+
+  GlobalAPIGatewayCloudWatchRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - apigateway.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AmazonAPIGatewayPushToCloudWatchLogs
+
+  SNSTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      TopicName: "SampleTopic"
+
+  RestApiAccessCloudWatchLogsGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: /rs-frontend-service/api-gateway-access
+      RetentionInDays: 7
+
+  RestApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      StageName: live
+      EndpointConfiguration:
+        Type: REGIONAL
+      MethodSettings:
+        - LoggingLevel: INFO
+          ResourcePath: "/*" # allows for logging on any resource
+          HttpMethod: "*" # allows for logging on any method
+      AccessLogSetting:
+        DestinationArn: !GetAtt RestApiAccessCloudWatchLogsGroup.Arn
+        Format: "$context.identity.sourceIp $context.identity.caller $context.identity.user [$context.requestTime] $context.httpMethod $context.resourcePath $context.protocol $context.status $context.responseLength $context.requestId"
+      TracingEnabled: True
+      DefinitionBody:
+        'Fn::Transform':
+          Name: 'AWS::Include'
+          Parameters:
+            Location: 'api/api.yaml'
+
+  RestApiRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - apigateway.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AmazonAPIGatewayPushToCloudWatchLogs
+      Policies:
+        - PolicyName: AllowSNSPublish
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - sns:Publish
+                Resource: !Sub "${SNSTopic}"
+
+##########################################################################
+#   Outputs                                                              #
+##########################################################################
+Outputs:
+  SNSTopicARN:
+    Description: "SNS topic ARN"
+    Value: !Ref SNSTopic
+  SNSTopicName:
+    Description: "SNS topic name"
+    Value: !Sub ${SNSTopic.TopicName}
+  SNSTopicNameAWSConsoleLink:
+    Description: "AWS Console link to the SNS topic"
+    Value: !Sub "https://console.aws.amazon.com/sns/v3/home?#/topic/${SNSTopic}"
+
+  RestApiEndpoint:
+    Description: "API Gateway endpoint"
+    Value: !Sub "https://${RestApi}.execute-api.${AWS::Region}.amazonaws.com/live/"
+  RestApiAWSConsoleLink:
+    Description: "AWS Console link to the API Gateway endpoint"
+    Value: !Sub "https://console.aws.amazon.com/apigateway/home?#/apis/${RestApi}/resources/${RestApi.RootResourceId}"
