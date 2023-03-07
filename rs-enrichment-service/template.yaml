@@ -1,0 +1,107 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  Example...
+
+
+Resources:
+  PublishQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: PublishQueue
+
+  EchoFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: EchoFunction
+      CodeUri: functions/echo/
+      Timeout: 5
+      AutoPublishAlias: live
+      Handler: app.lambda_handler
+      Runtime: python3.9
+      MemorySize: 128
+      Tracing: Active
+
+  EnrichmentStateMachineStandard:
+    Type: AWS::Serverless::StateMachine
+    Properties:
+      Name: EnrichmentStateMachineStandard
+      Type: STANDARD
+      DefinitionUri: statemachine/enrichment-template.asl.json
+      Logging:
+        Destinations:
+          - CloudWatchLogsLogGroup:
+              LogGroupArn: !GetAtt EnrichmentStateMachineStandardCloudWatchLogsGroup.Arn
+        IncludeExecutionData: True
+        Level: ALL # ALL | ERROR | FATAL | OFF
+      Tracing:
+        Enabled: true
+      DefinitionSubstitutions:
+        PublishQueue: !Ref PublishQueue
+        EchoFunction: !Ref EchoFunction
+      Policies:
+        - LambdaInvokePolicy:
+            FunctionName: !Ref EchoFunction
+        - SQSSendMessagePolicy:
+            QueueName: !GetAtt PublishQueue.QueueName
+        - Version: 2012-10-17
+          Statement:
+            - Effect: Allow
+              Action: # see https://docs.aws.amazon.com/step-functions/latest/dg/cw-logs.html
+                - logs:CreateLogDelivery
+                - logs:GetLogDelivery
+                - logs:UpdateLogDelivery
+                - logs:DeleteLogDelivery
+                - logs:ListLogDeliveries
+                - logs:PutResourcePolicy
+                - logs:DescribeResourcePolicies
+                - logs:DescribeLogGroups
+              Resource: "*"
+
+  EnrichmentStateMachineStandardCloudWatchLogsGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: /rs/rs-enrichment-service-standard
+      RetentionInDays: 7
+
+  EnrichmentStateMachineExpress:
+    Type: AWS::Serverless::StateMachine
+    Properties:
+      Name: EnrichmentStateMachineExpress
+      Type: EXPRESS
+      DefinitionUri: statemachine/enrichment-template.asl.json
+      Logging:
+        Destinations:
+          - CloudWatchLogsLogGroup:
+              LogGroupArn: !GetAtt EnrichmentStateMachineExpressCloudWatchLogsGroup.Arn
+        IncludeExecutionData: True
+        Level: ALL # ALL | ERROR | FATAL | OFF
+      Tracing:
+        Enabled: true
+      DefinitionSubstitutions:
+        PublishQueue: !Ref PublishQueue
+        EchoFunction: !Ref EchoFunction
+      Policies:
+        - LambdaInvokePolicy:
+            FunctionName: !Ref EchoFunction
+        - SQSSendMessagePolicy:
+            QueueName: !GetAtt PublishQueue.QueueName
+        - Version: 2012-10-17
+          Statement:
+            - Effect: Allow
+              Action: # see https://docs.aws.amazon.com/step-functions/latest/dg/cw-logs.html
+                - logs:CreateLogDelivery
+                - logs:GetLogDelivery
+                - logs:UpdateLogDelivery
+                - logs:DeleteLogDelivery
+                - logs:ListLogDeliveries
+                - logs:PutResourcePolicy
+                - logs:DescribeResourcePolicies
+                - logs:DescribeLogGroups
+              Resource: "*"
+
+  EnrichmentStateMachineExpressCloudWatchLogsGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: /rs/rs-enrichment-service-express
+      RetentionInDays: 7
