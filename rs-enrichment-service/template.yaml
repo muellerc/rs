@@ -27,12 +27,39 @@ Resources:
       MemorySize: 128
       Tracing: Active
 
+  ReceiverFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: ReceiverFunction
+      CodeUri: functions/receiver/
+      Timeout: 5
+      AutoPublishAlias: live
+      Handler: app.lambda_handler
+      Runtime: python3.9
+      MemorySize: 128
+      Tracing: Active
+      Environment:
+        Variables:
+          ACK_STATE_MACHINE_ARN: !Ref EnrichmentStateMachineExpress2
+          RESPONSE_STATE_MACHINE_ARN: !Ref EnrichmentStateMachineExpress3
+      Policies:
+        - StepFunctionsExecutionPolicy:
+            StateMachineName: !GetAtt EnrichmentStateMachineExpress2.Name
+        - StepFunctionsExecutionPolicy:
+            StateMachineName: !GetAtt EnrichmentStateMachineExpress3.Name
+      Events:
+        SQSEvent:
+          Type: SQS
+          Properties:
+            Queue: !GetAtt PublishQueue.Arn
+            BatchSize: 1
+
   EnrichmentStateMachineStandard:
     Type: AWS::Serverless::StateMachine
     Properties:
       Name: EnrichmentStateMachineStandard
       Type: STANDARD
-      DefinitionUri: statemachine/enrichment-template.asl.json
+      DefinitionUri: statemachine/enrichment-template-standard.asl.json
       Logging:
         Destinations:
           - CloudWatchLogsLogGroup:
@@ -72,12 +99,12 @@ Resources:
       LogGroupName: /rs/rs-enrichment-service-standard
       RetentionInDays: 7
 
-  EnrichmentStateMachineExpress:
+  EnrichmentStateMachineExpress1:
     Type: AWS::Serverless::StateMachine
     Properties:
-      Name: EnrichmentStateMachineExpress
+      Name: EnrichmentStateMachineExpress1
       Type: EXPRESS
-      DefinitionUri: statemachine/enrichment-template.asl.json
+      DefinitionUri: statemachine/enrichment-template-express-1.asl.json
       Logging:
         Destinations:
           - CloudWatchLogsLogGroup:
@@ -97,6 +124,78 @@ Resources:
             TopicName: !GetAtt EventTopic.TopicName
         - SQSSendMessagePolicy:
             QueueName: !GetAtt PublishQueue.QueueName
+        - Version: 2012-10-17
+          Statement:
+            - Effect: Allow
+              Action: # see https://docs.aws.amazon.com/step-functions/latest/dg/cw-logs.html
+                - logs:CreateLogDelivery
+                - logs:GetLogDelivery
+                - logs:UpdateLogDelivery
+                - logs:DeleteLogDelivery
+                - logs:ListLogDeliveries
+                - logs:PutResourcePolicy
+                - logs:DescribeResourcePolicies
+                - logs:DescribeLogGroups
+              Resource: "*"
+
+  EnrichmentStateMachineExpress2:
+    Type: AWS::Serverless::StateMachine
+    Properties:
+      Name: EnrichmentStateMachineExpress2
+      Type: EXPRESS
+      DefinitionUri: statemachine/enrichment-template-express-2.asl.json
+      Logging:
+        Destinations:
+          - CloudWatchLogsLogGroup:
+              LogGroupArn: !GetAtt EnrichmentStateMachineExpressCloudWatchLogsGroup.Arn
+        IncludeExecutionData: True
+        Level: ALL # ALL | ERROR | FATAL | OFF
+      Tracing:
+        Enabled: true
+      DefinitionSubstitutions:
+        EventTopic: !Ref EventTopic
+        EchoFunction: !Ref EchoFunction
+      Policies:
+        - LambdaInvokePolicy:
+            FunctionName: !Ref EchoFunction
+        - SNSPublishMessagePolicy:
+            TopicName: !GetAtt EventTopic.TopicName
+        - Version: 2012-10-17
+          Statement:
+            - Effect: Allow
+              Action: # see https://docs.aws.amazon.com/step-functions/latest/dg/cw-logs.html
+                - logs:CreateLogDelivery
+                - logs:GetLogDelivery
+                - logs:UpdateLogDelivery
+                - logs:DeleteLogDelivery
+                - logs:ListLogDeliveries
+                - logs:PutResourcePolicy
+                - logs:DescribeResourcePolicies
+                - logs:DescribeLogGroups
+              Resource: "*"
+
+  EnrichmentStateMachineExpress3:
+    Type: AWS::Serverless::StateMachine
+    Properties:
+      Name: EnrichmentStateMachineExpress3
+      Type: EXPRESS
+      DefinitionUri: statemachine/enrichment-template-express-3.asl.json
+      Logging:
+        Destinations:
+          - CloudWatchLogsLogGroup:
+              LogGroupArn: !GetAtt EnrichmentStateMachineExpressCloudWatchLogsGroup.Arn
+        IncludeExecutionData: True
+        Level: ALL # ALL | ERROR | FATAL | OFF
+      Tracing:
+        Enabled: true
+      DefinitionSubstitutions:
+        EventTopic: !Ref EventTopic
+        EchoFunction: !Ref EchoFunction
+      Policies:
+        - LambdaInvokePolicy:
+            FunctionName: !Ref EchoFunction
+        - SNSPublishMessagePolicy:
+            TopicName: !GetAtt EventTopic.TopicName
         - Version: 2012-10-17
           Statement:
             - Effect: Allow
