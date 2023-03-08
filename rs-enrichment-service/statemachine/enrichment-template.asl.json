@@ -1,30 +1,7 @@
 {
   "Comment": "A description of my state machine",
-  "StartAt": "Event creation",
+  "StartAt": "Notify Event Status: 1",
   "States": {
-    "Event creation": {
-      "Type": "Task",
-      "Resource": "arn:aws:states:::lambda:invoke",
-      "OutputPath": "$.Payload",
-      "Parameters": {
-        "FunctionName": "${EchoFunction}:live",
-        "Payload.$": "$"
-      },
-      "Retry": [
-        {
-          "ErrorEquals": [
-            "Lambda.ServiceException",
-            "Lambda.AWSLambdaException",
-            "Lambda.SdkClientException",
-            "Lambda.TooManyRequestsException"
-          ],
-          "IntervalSeconds": 2,
-          "MaxAttempts": 6,
-          "BackoffRate": 2
-        }
-      ],
-      "Next": "Notify Event Status: 1"
-    },
     "Notify Event Status: 1": {
       "Type": "Task",
       "Resource": "arn:aws:states:::sns:publish",
