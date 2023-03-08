@@ -27,12 +27,12 @@
     },
     "Notify Event Status: 1": {
       "Type": "Task",
-      "Resource": "arn:aws:states:::lambda:invoke",
-      "OutputPath": "$.Payload",
+      "Resource": "arn:aws:states:::sns:publish",
       "Parameters": {
-        "FunctionName": "${EchoFunction}:live",
-        "Payload.$": "$"
+        "Message.$": "$",
+        "TopicArn": "${EventTopic}"
       },
+      "ResultPath": null,
       "Retry": [
         {
           "ErrorEquals": [
@@ -141,12 +141,12 @@
     },
     "Notify Event Status: 2": {
       "Type": "Task",
-      "Resource": "arn:aws:states:::lambda:invoke",
-      "OutputPath": "$.Payload",
+      "Resource": "arn:aws:states:::sns:publish",
       "Parameters": {
-        "FunctionName": "${EchoFunction}:live",
-        "Payload.$": "$"
+        "Message.$": "$",
+        "TopicArn": "${EventTopic}"
       },
+      "ResultPath": null,
       "Retry": [
         {
           "ErrorEquals": [
@@ -174,12 +174,12 @@
     },
     "Notify Event Status: 3": {
       "Type": "Task",
-      "Resource": "arn:aws:states:::lambda:invoke",
-      "OutputPath": "$.Payload",
+      "Resource": "arn:aws:states:::sns:publish",
       "Parameters": {
-        "FunctionName": "${EchoFunction}:live",
-        "Payload.$": "$"
+        "Message.$": "$",
+        "TopicArn": "${EventTopic}"
       },
+      "ResultPath": null,
       "Retry": [
         {
           "ErrorEquals": [
@@ -231,12 +231,12 @@
     },
     "Notify Event Status: 4": {
       "Type": "Task",
-      "Resource": "arn:aws:states:::lambda:invoke",
-      "OutputPath": "$.Payload",
+      "Resource": "arn:aws:states:::sns:publish",
       "Parameters": {
-        "FunctionName": "${EchoFunction}:live",
-        "Payload.$": "$"
+        "Message.$": "$",
+        "TopicArn": "${EventTopic}"
       },
+      "ResultPath": null,
       "Retry": [
         {
           "ErrorEquals": [
@@ -288,12 +288,12 @@
     },
     "Notify Event Status: 5": {
       "Type": "Task",
-      "Resource": "arn:aws:states:::lambda:invoke",
-      "OutputPath": "$.Payload",
+      "Resource": "arn:aws:states:::sns:publish",
       "Parameters": {
-        "FunctionName": "${EchoFunction}:live",
-        "Payload.$": "$"
+        "Message.$": "$",
+        "TopicArn": "${EventTopic}"
       },
+      "ResultPath": null,
       "Retry": [
         {
           "ErrorEquals": [

@@ -10,6 +10,11 @@ Resources:
     Properties:
       QueueName: PublishQueue
 
+  EventTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      TopicName: EventTopic
+
   EchoFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -38,10 +43,13 @@ Resources:
         Enabled: true
       DefinitionSubstitutions:
         PublishQueue: !Ref PublishQueue
+        EventTopic: !Ref EventTopic
         EchoFunction: !Ref EchoFunction
       Policies:
         - LambdaInvokePolicy:
             FunctionName: !Ref EchoFunction
+        - SNSPublishMessagePolicy:
+            TopicName: !GetAtt EventTopic.TopicName
         - SQSSendMessagePolicy:
             QueueName: !GetAtt PublishQueue.QueueName
         - Version: 2012-10-17
@@ -80,10 +88,13 @@ Resources:
         Enabled: true
       DefinitionSubstitutions:
         PublishQueue: !Ref PublishQueue
+        EventTopic: !Ref EventTopic
         EchoFunction: !Ref EchoFunction
       Policies:
         - LambdaInvokePolicy:
             FunctionName: !Ref EchoFunction
+        - SNSPublishMessagePolicy:
+            TopicName: !GetAtt EventTopic.TopicName
         - SQSSendMessagePolicy:
             QueueName: !GetAtt PublishQueue.QueueName
         - Version: 2012-10-17
