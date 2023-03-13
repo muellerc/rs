@@ -34,7 +34,7 @@
           "BackoffRate": 2
         }
       ],
-      "Next": "Notify Event Status: 4"
+      "Next": "Notify Event Status: 5"
     },
     "Service 2 Response": {
       "Type": "Task",
@@ -57,7 +57,7 @@
           "BackoffRate": 2
         }
       ],
-      "Next": "Notify Event Status: 4"
+      "Next": "Notify Event Status: 5"
     },
     "Notify Event Status: 5": {
       "Type": "Task",
